@@ -292,7 +292,7 @@
     tab: 'inicio',
   };
 
-  async function apiFetch(path, options = {}, timeoutMs = 20000) {
+  async function apiFetch(path, options = {}, timeoutMs = 60000) {
     const url = state.apiBase.replace(/\/+$/, '') + path;
     const headers = Object.assign({}, options.headers || {});
     if (state.token) headers['Authorization'] = 'Bearer ' + state.token;
@@ -462,10 +462,10 @@
   function consultarSituacion(cuit){
     state.cuit = cuit;
     navwrap.innerHTML = '';
-    content.innerHTML = `<div class="loading-view"><div class="spinner"></div><p class="sub">Consultando tu backend, que consulta al BCRA…</p><p class="sub">Si el servidor estuvo inactivo puede tardar hasta 20 segundos en responder.</p></div>`;
+    content.innerHTML = `<div class="loading-view"><div class="spinner"></div><p class="sub">Consultando tu backend, que consulta al BCRA…</p><p class="sub">Si el servidor estuvo inactivo puede tardar hasta 60 segundos en responder.</p></div>`;
     apiFetch(`/situacion/${encodeURIComponent(cuit)}`).then(res=>{
       renderNav();
-      if (res.timeoutError) { renderErrorInicio(`El servidor tardó demasiado en responder (más de 20 segundos). Si hace rato que no se usa, puede estar "despertando" — probá de nuevo en unos segundos.`); return; }
+      if (res.timeoutError) { renderErrorInicio(`El servidor tardó demasiado en responder (más de 60 segundos). Si hace rato que no se usa, puede estar "despertando" — probá de nuevo en unos segundos.`); return; }
       if (res.networkError) { renderErrorInicio(`No pudimos conectar con ${state.apiBase}. Verificá que el backend esté corriendo.`); return; }
       if (!res.ok) { renderErrorInicio((res.data&&res.data.detail)||`El backend respondió con un error (${res.status}).`); return; }
       state.situacion = res.data;
