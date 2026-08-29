@@ -378,16 +378,12 @@
           <div class="big-icon">📋</div>
           <p>Todavía no consultaste tu situación en el BCRA.</p>
         </div>
-        <label class="field-label">URL de tu backend</label>
-        <input type="text" id="apiBaseInput" value="${state.apiBase}">
         <label class="field-label">CUIT / CUIL</label>
         <input type="text" id="cuitInput" inputmode="numeric" maxlength="11" placeholder="20345678901" value="${state.cuit||''}">
         <button class="btn-primary" id="consultarBtn">Consultar mi situación</button>
         <div class="disclaimer-strip">🔒 No guardamos tu CUIT en el navegador. La consulta va directo a tu backend, que a su vez consulta al BCRA.</div>
       `;
-      document.getElementById('apiBaseInput').addEventListener('change', function(){ state.apiBase = this.value.trim() || state.apiBase; });
       document.getElementById('consultarBtn').addEventListener('click', ()=>{
-        state.apiBase = document.getElementById('apiBaseInput').value.trim() || state.apiBase;
         const val = document.getElementById('cuitInput').value.trim();
         if (val.length < 6) return;
         consultarSituacion(val);
@@ -695,10 +691,7 @@
         <div class="empty-state" style="padding:14px 0;"><p>No iniciaste sesión todavía.</p></div>
         <button class="btn-primary" id="loginBtn">Iniciar sesión / Crear cuenta</button>
       `}
-      <label class="field-label" style="margin-top:14px;">URL de tu backend</label>
-      <input type="text" id="apiBaseInputPerfil" value="${state.apiBase}">
     `;
-    document.getElementById('apiBaseInputPerfil').addEventListener('change', function(){ state.apiBase = this.value.trim() || state.apiBase; });
     const loginBtn = document.getElementById('loginBtn');
     if (loginBtn) loginBtn.addEventListener('click', ()=> renderAuthGate(()=> renderPerfil()));
     const logoutBtn = document.getElementById('logoutBtn');
