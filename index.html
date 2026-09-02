@@ -282,6 +282,13 @@
   const content = document.getElementById('content');
   const navwrap = document.getElementById('navwrap');
 
+  // Cada vez que se re-renderiza una pantalla (content.innerHTML = ...),
+  // el scroll queda en la posición de la pantalla anterior. Esto hace que
+  // botones como "‹ Volver", que van al principio del contenido, queden
+  // tapados arriba si el usuario venía scrolleado. Lo resolvemos volviendo
+  // el scroll a 0 automáticamente en cada cambio de contenido.
+  new MutationObserver(()=>{ content.scrollTop = 0; }).observe(content, { childList: true });
+
   const state = {
     apiBase: 'https://informeclaro-backend.onrender.com',
     token: null,
