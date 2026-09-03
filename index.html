@@ -84,6 +84,24 @@
     overflow-y:auto;
   }
 
+  /* Barra de acciones fija al pie de la pantalla, para no tener que
+     scrollear hasta el final para encontrar el botón principal. */
+  .sticky-actions{
+    position:sticky;
+    bottom:-8px;
+    margin:14px -18px -8px;
+    padding:12px 18px calc(14px + env(safe-area-inset-bottom, 0px));
+    background:linear-gradient(to top, var(--bg) 65%, rgba(243,246,251,0));
+  }
+  .sticky-actions .btn-primary,
+  .sticky-actions .btn-secondary{
+    margin-top:8px;
+  }
+  .sticky-actions .btn-primary:first-child,
+  .sticky-actions .btn-secondary:first-child{
+    margin-top:0;
+  }
+
   /* ---------- Bottom nav ---------- */
   .navbar{
     display:flex;
@@ -584,8 +602,10 @@
       </div>
 
       ${entidad.posible_situacion_a_revisar ? `
-        <button class="btn-primary" id="generarReclamoBtn">📄 Generar reclamo</button>
-        <button class="btn-secondary" id="descargarNotaBtn">⬇ Descargar modelo de nota</button>
+        <div class="sticky-actions">
+          <button class="btn-primary" id="generarReclamoBtn">📄 Generar reclamo</button>
+          <button class="btn-secondary" id="descargarNotaBtn">⬇ Descargar modelo de nota</button>
+        </div>
       ` : ''}
     `;
     document.getElementById('backBtn').addEventListener('click', ()=>{ renderNav(); renderRegistros(); });
@@ -763,7 +783,9 @@
       <input type="text" id="domicilioInput" placeholder="Calle, número, localidad">
       <label class="checkline"><input type="checkbox" id="docCheck"><span>Tengo documentación de respaldo para adjuntar</span></label>
       <div class="error-box" id="claimError" style="display:none;"></div>
-      <button class="btn-primary" id="generarBtn">Generar modelo de reclamo</button>
+      <div class="sticky-actions">
+        <button class="btn-primary" id="generarBtn">Generar modelo de reclamo</button>
+      </div>
     `;
     document.getElementById('backBtn4').addEventListener('click', ()=>{ renderNav(); renderDetalleRegistro(entidad); });
     document.getElementById('generarBtn').addEventListener('click', async ()=>{
@@ -799,7 +821,9 @@
       <div class="card"><div class="entidad-meta">Asunto</div><b style="font-size:12.5px;">${asunto}</b></div>
       <div class="card" style="white-space:pre-wrap; font-size:11.5px; line-height:1.5; color:var(--ink-soft);">${texto}</div>
       <label class="checkline"><input type="checkbox" id="confirmCheck"><span>Revisé el texto y los datos, y son correctos.</span></label>
-      <button class="btn-primary" id="abrirCorreoBtn" disabled>Abrir en mi correo</button>
+      <div class="sticky-actions">
+        <button class="btn-primary" id="abrirCorreoBtn" disabled>Abrir en mi correo</button>
+      </div>
     `;
     document.getElementById('backBtn5').addEventListener('click', ()=> renderClaimForm(entidad));
     const check = document.getElementById('confirmCheck');
@@ -813,37 +837,3 @@
       renderClaimTracking(reclamoId);
     });
   }
-
-  async function renderClaimTracking(reclamoId){
-    navwrap.innerHTML = '';
-    content.innerHTML = `<div class="loading-view"><div class="spinner"></div><p class="sub">Cargando seguimiento…</p></div>`;
-    const r = await apiFetch(`/reclamos/${reclamoId}`);
-    renderNav();
-    if (!r.ok){ content.innerHTML = `<div class="error-box">No pudimos cargar el seguimiento.</div>`; return; }
-    const rec = r.data;
-    const pasos = ['generado','enviado','resuelto'];
-    const idx = Math.max(0, pasos.indexOf(rec.estado));
-    content.innerHTML = `
-      <button class="btn-text" id="backBtn6" style="margin-bottom:10px;">‹ Volver</button>
-      <h2 class="h-screen">Seguimiento del reclamo</h2>
-      <p class="sub" style="margin-bottom:14px;">N° ${rec.numero}</p>
-      <div class="card"><div class="entidad-meta">Entidad</div><b>${rec.entidad}</b></div>
-      <div class="card"><div class="entidad-meta">Documentación</div><b>${rec.documentacion_adjunta?'Adjuntada':'No adjuntada'}</b></div>
-      <div class="card"><div class="entidad-meta">Plazo de respuesta</div><b>${rec.plazo_respuesta_dias} días hábiles</b></div>
-      <div class="collapsible">
-        <div class="collapsible-h">Estado</div>
-        <ul style="padding-left:18px; margin:0; font-size:12px; line-height:1.7;">
-          ${pasos.map((p,i)=>`<li style="${i<=idx?'font-weight:700;':'color:var(--ink-soft);'}">${{generado:'Preparado',enviado:'Enviado',resuelto:'Respuesta recibida'}[p]}${i===idx?' — estado actual':''}</li>`).join('')}
-        </ul>
-      </div>
-      <button class="btn-secondary" id="refrescarBtn">Actualizar estado</button>
-    `;
-    document.getElementById('backBtn6').addEventListener('click', ()=> goTab('reclamos'));
-    document.getElementById('refrescarBtn').addEventListener('click', ()=> renderClaimTracking(reclamoId));
-  }
-
-  renderOnboarding();
-})();
-</script>
-</body>
-</html>
