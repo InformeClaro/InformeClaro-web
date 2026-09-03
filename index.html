@@ -837,3 +837,37 @@
       renderClaimTracking(reclamoId);
     });
   }
+
+  async function renderClaimTracking(reclamoId){
+    navwrap.innerHTML = '';
+    content.innerHTML = `<div class="loading-view"><div class="spinner"></div><p class="sub">Cargando seguimiento…</p></div>`;
+    const r = await apiFetch(`/reclamos/${reclamoId}`);
+    renderNav();
+    if (!r.ok){ content.innerHTML = `<div class="error-box">No pudimos cargar el seguimiento.</div>`; return; }
+    const rec = r.data;
+    const pasos = ['generado','enviado','resuelto'];
+    const idx = Math.max(0, pasos.indexOf(rec.estado));
+    content.innerHTML = `
+      <button class="btn-text" id="backBtn6" style="margin-bottom:10px;">‹ Volver</button>
+      <h2 class="h-screen">Seguimiento del reclamo</h2>
+      <p class="sub" style="margin-bottom:14px;">N° ${rec.numero}</p>
+      <div class="card"><div class="entidad-meta">Entidad</div><b>${rec.entidad}</b></div>
+      <div class="card"><div class="entidad-meta">Documentación</div><b>${rec.documentacion_adjunta?'Adjuntada':'No adjuntada'}</b></div>
+      <div class="card"><div class="entidad-meta">Plazo de respuesta</div><b>${rec.plazo_respuesta_dias} días hábiles</b></div>
+      <div class="collapsible">
+        <div class="collapsible-h">Estado</div>
+        <ul style="padding-left:18px; margin:0; font-size:12px; line-height:1.7;">
+          ${pasos.map((p,i)=>`<li style="${i<=idx?'font-weight:700;':'color:var(--ink-soft);'}">${{generado:'Preparado',enviado:'Enviado',resuelto:'Respuesta recibida'}[p]}${i===idx?' — estado actual':''}</li>`).join('')}
+        </ul>
+      </div>
+      <button class="btn-secondary" id="refrescarBtn">Actualizar estado</button>
+    `;
+    document.getElementById('backBtn6').addEventListener('click', ()=> goTab('reclamos'));
+    document.getElementById('refrescarBtn').addEventListener('click', ()=> renderClaimTracking(reclamoId));
+  }
+
+  renderOnboarding();
+})();
+</script>
+</body>
+</html>
