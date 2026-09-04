@@ -782,7 +782,6 @@
       <label class="field-label">Tu domicilio (opcional)</label>
       <input type="text" id="domicilioInput" placeholder="Calle, número, localidad">
       <label class="checkline"><input type="checkbox" id="docCheck"><span>Tengo documentación de respaldo para adjuntar</span></label>
-      <label class="checkline"><input type="checkbox" id="pruebaCheck"><span>Es una prueba (no es un reclamo real, no se va a enviar)</span></label>
       <div class="error-box" id="claimError" style="display:none;"></div>
       <div class="sticky-actions">
         <button class="btn-primary" id="generarBtn">Generar modelo de reclamo</button>
@@ -793,7 +792,6 @@
       const nombre = document.getElementById('nombreInput').value.trim();
       const domicilio = document.getElementById('domicilioInput').value.trim();
       const docAdjunta = document.getElementById('docCheck').checked;
-      const modoPrueba = document.getElementById('pruebaCheck').checked;
       const errBox = document.getElementById('claimError');
       errBox.style.display='none';
       const r = await apiFetch('/reclamo', {
@@ -806,22 +804,18 @@
           nombre_completo: nombre || undefined,
           domicilio: domicilio || undefined,
           documentacion_adjunta: docAdjunta,
-          modo_prueba: modoPrueba,
         }),
       });
       if (!r.ok){ errBox.textContent=(r.data&&r.data.detail)||'No se pudo generar el reclamo.'; errBox.style.display='block'; return; }
-      renderClaimReview(entidad, r.data.texto_reclamo, r.data.reclamo_id, modoPrueba);
+      renderClaimReview(entidad, r.data.texto_reclamo, r.data.reclamo_id);
     });
   }
 
-  function renderClaimReview(entidad, texto, reclamoId, modoPrueba){
+  function renderClaimReview(entidad, texto, reclamoId){
     const asunto = `Solicitud de revisión — información informada por ${entidad.entidad}`;
     content.innerHTML = `
       <button class="btn-text" id="backBtn5" style="margin-bottom:10px;">‹ Volver a editar</button>
-      <div class="card-row" style="margin-bottom:2px;">
-        <h2 class="h-screen">Revisá tu reclamo</h2>
-        ${modoPrueba ? `<span class="pill" style="background:#FFF1C2; color:#8A6D00;">PRUEBA</span>` : ''}
-      </div>
+      <h2 class="h-screen">Revisá tu reclamo</h2>
       <div class="info-box">Esto es un modelo, no un dictamen legal. Nosotros no lo enviamos — lo hacés vos desde tu correo.</div>
       <div class="card"><div class="entidad-meta">Destinatario</div><b>${entidad.entidad}</b></div>
       <div class="card"><div class="entidad-meta">Asunto</div><b style="font-size:12.5px;">${asunto}</b></div>
@@ -855,10 +849,7 @@
     const idx = Math.max(0, pasos.indexOf(rec.estado));
     content.innerHTML = `
       <button class="btn-text" id="backBtn6" style="margin-bottom:10px;">‹ Volver</button>
-      <div class="card-row" style="margin-bottom:2px;">
-        <h2 class="h-screen">Seguimiento del reclamo</h2>
-        ${rec.es_prueba ? `<span class="pill" style="background:#FFF1C2; color:#8A6D00;">PRUEBA</span>` : ''}
-      </div>
+      <h2 class="h-screen">Seguimiento del reclamo</h2>
       <p class="sub" style="margin-bottom:14px;">N° ${rec.numero}</p>
       <div class="card"><div class="entidad-meta">Entidad</div><b>${rec.entidad}</b></div>
       <div class="card"><div class="entidad-meta">Documentación</div><b>${rec.documentacion_adjunta?'Adjuntada':'No adjuntada'}</b></div>
