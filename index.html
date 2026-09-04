@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>InformeClaro — Entendé tu situación crediticia</title>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@500;600&display=swap');
 
@@ -726,6 +727,8 @@
   }
 
   // ================= AUTH GATE =================
+  const GOOGLE_CLIENT_ID = '147083048742-9l0gae2i8ialjgfsaf34u2e60dmi0eqo.apps.googleusercontent.com';
+
   function renderAuthGate(onSuccess){
     navwrap.innerHTML = '';
     let modo = 'login';
@@ -734,6 +737,12 @@
         <button class="btn-text" id="backBtnA" style="margin-bottom:10px;">‹ Volver</button>
         <h2 class="h-screen">Necesitás una cuenta</h2>
         <p class="sub" style="margin-bottom:14px;">Para generar y guardar el seguimiento de tu reclamo</p>
+        <div id="googleBtnContainer" style="display:flex; justify-content:center; margin-bottom:14px;"></div>
+        <div style="display:flex; align-items:center; gap:10px; margin:4px 0 14px; color:var(--ink-soft); font-size:11.5px;">
+          <div style="flex:1; height:1px; background:var(--line);"></div>
+          o con tu email
+          <div style="flex:1; height:1px; background:var(--line);"></div>
+        </div>
         <div class="toggle-row">
           <button class="toggle-btn ${modo==='login'?'active':''}" id="tabLogin">Iniciar sesión</button>
           <button class="toggle-btn ${modo==='registro'?'active':''}" id="tabRegistro">Crear cuenta</button>
@@ -749,6 +758,36 @@
       document.getElementById('tabLogin').addEventListener('click', ()=>{ modo='login'; draw(); });
       document.getElementById('tabRegistro').addEventListener('click', ()=>{ modo='registro'; draw(); });
       document.getElementById('authSubmitBtn').addEventListener('click', submit);
+      initGoogleButton();
+    }
+    function initGoogleButton(intentos){
+      intentos = intentos || 0;
+      const cont = document.getElementById('googleBtnContainer');
+      if (!cont) return; // la pantalla ya cambió
+      if (window.google && google.accounts && google.accounts.id){
+        google.accounts.id.initialize({ client_id: GOOGLE_CLIENT_ID, callback: onGoogleCredential });
+        google.accounts.id.renderButton(cont, { theme:'outline', size:'large', width: 300, text:'continue_with', locale:'es' });
+      } else if (intentos < 20){
+        // la libreria de Google todavia no cargo (script async); reintentamos un rato
+        setTimeout(()=> initGoogleButton(intentos+1), 200);
+      }
+    }
+    async function onGoogleCredential(response){
+      const errBox = document.getElementById('authError');
+      if (errBox){ errBox.style.display='none'; }
+      const r = await apiFetch('/auth/google', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ credential: response.credential }),
+      });
+      if (!r.ok){
+        if (errBox){ errBox.textContent=(r.data&&r.data.detail)||'No se pudo continuar con Google.'; errBox.style.display='block'; }
+        return;
+      }
+      state.token = r.data.access_token;
+      const me = await apiFetch('/auth/me');
+      state.userEmail = (me.ok && me.data.email) ? me.data.email : state.userEmail;
+      renderNav();
+      onSuccess();
     }
     async function submit(){
       const email = document.getElementById('authEmail').value.trim();
