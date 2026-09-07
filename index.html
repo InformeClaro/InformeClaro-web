@@ -825,18 +825,31 @@
   }
 
   // ================= FLUJO DE RECLAMO =================
-  function renderClaimForm(entidad, tipoReclamo){
+  async function renderClaimForm(entidad, tipoReclamo){
     tipoReclamo = tipoReclamo || 'caducidad';
     navwrap.innerHTML = '';
     const titulo = tipoReclamo === 'aclaracion' ? 'Preparar mi pedido de aclaración' : 'Preparar mi reclamo';
+    content.innerHTML = `<div class="loading-view"><div class="spinner"></div><p class="sub">Cargando…</p></div>`;
+
+    // Si ya tiene cuenta, precargamos nombre y domicilio guardados en el perfil
+    // (si los cargó antes), para no pedirselos de nuevo cada vez.
+    let nombrePrevio = '', domicilioPrevio = '';
+    if (state.token){
+      const me = await apiFetch('/auth/me');
+      if (me.ok && me.data){
+        nombrePrevio = [me.data.nombre, me.data.apellido].filter(Boolean).join(' ').trim();
+        domicilioPrevio = me.data.domicilio || '';
+      }
+    }
+
     content.innerHTML = `
       <button class="btn-text" id="backBtn4" style="margin-bottom:10px;">‹ Volver</button>
       <h2 class="h-screen">${titulo}</h2>
       <p class="sub" style="margin-bottom:14px;">Sobre: ${entidad.entidad}</p>
       <label class="field-label">Tu nombre completo</label>
-      <input type="text" id="nombreInput" placeholder="Como figura en tu DNI">
+      <input type="text" id="nombreInput" placeholder="Como figura en tu DNI" value="${nombrePrevio.replace(/"/g,'&quot;')}">
       <label class="field-label">Tu domicilio (opcional)</label>
-      <input type="text" id="domicilioInput" placeholder="Calle, número, localidad">
+      <input type="text" id="domicilioInput" placeholder="Calle, número, localidad" value="${domicilioPrevio.replace(/"/g,'&quot;')}">
       <label class="checkline"><input type="checkbox" id="docCheck"><span>Tengo documentación de respaldo para adjuntar</span></label>
       <div class="error-box" id="claimError" style="display:none;"></div>
       <div class="sticky-actions">
@@ -864,6 +877,13 @@
         }),
       });
       if (!r.ok){ errBox.textContent=(r.data&&r.data.detail)||'No se pudo generar el reclamo.'; errBox.style.display='block'; return; }
+      // Guardamos nombre y domicilio en el perfil para no volver a pedirlos la proxima vez.
+      if (nombre || domicilio){
+        apiFetch('/auth/perfil', {
+          method:'PUT', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ nombre: nombre || undefined, domicilio: domicilio || undefined }),
+        }).catch(()=>{});
+      }
       renderClaimReview(entidad, r.data.texto_reclamo, r.data.reclamo_id, tipoReclamo);
     });
   }
